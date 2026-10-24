@@ -58,3 +58,34 @@ export const listEmployeesQuerySchema = z.object({
     status: employmentStatus.optional(),
   }),
 });
+
+export const csvDryRunSchema = z.object({
+  body: z.object({
+    csv: z.string().min(1),
+  }),
+});
+
+export const csvConfirmSchema = z.object({
+  body: z.object({
+    rows: z.array(
+      z.object({
+        employeeCode: z.string().trim().min(2).max(50),
+        firstName: z.string().trim().min(1).max(100),
+        lastName: z.string().trim().min(1).max(100),
+        email: z.string().email(),
+        joiningDate: z.string().date(),
+        basicSalary: z.number().positive(),
+        departmentId: z.string().uuid().optional(),
+        designationId: z.string().uuid().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+      }),
+    ),
+  }),
+});
+
+export const faceEnrollmentSchema = z.object({
+  body: z.object({
+    descriptor: z.array(z.number()).length(128),
+  }),
+});

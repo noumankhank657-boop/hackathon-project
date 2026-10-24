@@ -188,3 +188,146 @@ export async function updateMyProfile(auth: TokenPayload, payload: { phone?: str
   await audit(auth.userId, "UPDATE", "EMPLOYEE_PROFILE", auth.employeeId, before as unknown as Prisma.JsonObject, updated as unknown as Prisma.JsonObject);
   return updated;
 }
+
+type CsvDryRunResult = {
+  validRows: Array<{
+    employeeCode: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    joiningDate: string;
+    basicSalary: number;
+    departmentId?: string;
+    designationId?: string;
+    phone?: string;
+    address?: string;
+  }>;
+  errors: Array<{ row: number; field: string; reason: string }>;
+};
+
+function parseCsvRows(csv: string) {
+  const [headerLine, ...dataLines] = csv.trim().split(/\r?\n/);
+  const headers = headerLine.split(",").map((item) => item.trim());
+  return dataLines.filter(Boolean).map((line, index) => {
+    const values = line.split(",").map((item) => item.trim());
+    const row = Object.fromEntries(headers.map((header, valueIndex) => [header, values[valueIndex] ?? ""]));
+    return { rowNumber: index + 2, row };
+  });
+}
+
+export async function dryRunImportEmployees(csv: string): Promise<CsvDryRunResult> {
+  const parsedRows = parseCsvRows(csv);
+  const errors: CsvDryRunResult["errors"] = [];
+  const validRows: CsvDryRunResult["validRows"] = [];
+
+  for (const { rowNumber, row } of parsedRows) {
+    const requiredFields = ["employeeCode", "firstName", "lastName", "email", "joiningDate", "basicSalary"];
+    requiredFields.forEach((field) => {
+      if (!row[field]) errors.push({ row: rowNumber, field, reason: "Required field is missing" });
+    });
+    if (!/^\S+@\S+\.\S+$/.test(row.email ?? "")) errors.push({ row: rowNumber, field: "email", reason: "Invalid email format" });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.joiningDate ?? "")) errors.push({ row: rowNumber, field: "joiningDate", reason: "Date must be ISO format (YYYY-MM-DD)" });
+    const salary = Number(row.basicSalary);
+    if (!Number.isFinite(salary) || salary <= 0) errors.push({ row: rowNumber, field: "basicSalary", reason: "Salary must be greater than 0" });
+
+    const existingCode = await db.employee.findUnique({ where: { employeeCode: row.employeeCode } });
+    if (existingCode) errors.push({ row: rowNumber, field: "employeeCode", reason: "Employee code already exists" });
+    const existingEmail = await db.user.findUnique({ where: { email: row.email.toLowerCase() } });
+    if (existingEmail) errors.push({ row: rowNumber, field: "email", reason: "Email already exists" });
+
+    if (row.departmentId) {
+      const department = await db.department.findUnique({ where: { id: row.departmentId } });
+      if (!department) errors.push({ row: rowNumber, field: "departmentId", reason: "Unknown department" });
+    }
+    if (row.designationId) {
+      const designation = await db.designation.findUnique({ where: { id: row.designationId } });
+      if (!designation) errors.push({ row: rowNumber, field: "designationId", reason: "Unknown designation" });
+    }
+
+    if (!errors.some((item) => item.row === rowNumber)) {
+      validRows.push({
+        employeeCode: row.employeeCode,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        email: row.email.toLowerCase(),
+        joiningDate: row.joiningDate,
+        basicSalary: salary,
+        departmentId: row.departmentId || undefined,
+        designationId: row.designationId || undefined,
+        phone: row.phone || undefined,
+        address: row.address || undefined,
+      });
+    }
+  }
+
+  return { validRows, errors };
+}
+
+export async function confirmImportEmployees(actorId: string, rows: CsvDryRunResult["validRows"]) {
+  const created = [];
+  for (const row of rows) {
+    created.push(await createEmployee(actorId, { ...row, status: "ACTIVE" }));
+  }
+  return created;
+}
+
+export async function exportEmployeesCsv(auth: TokenPayload) {
+  if (!["ADMIN", "HR"].includes(auth.role)) throw new AppError(403, "Only Admin and HR can export employees");
+  const employees = await db.employee.findMany({ include: employeeInclude, orderBy: { createdAt: "asc" } });
+  const header = [
+    "employeeCode",
+    "firstName",
+    "lastName",
+    "email",
+    "joiningDate",
+    "status",
+    "basicSalary",
+    "department",
+    "designation",
+    "phone",
+    "address",
+  ];
+  const rows = employees.map((employee) =>
+    [
+      employee.employeeCode,
+      employee.firstName,
+      employee.lastName,
+      employee.user.email,
+      employee.joiningDate.toISOString().slice(0, 10),
+      employee.status,
+      Number(employee.basicSalary).toFixed(2),
+      employee.department?.name ?? "",
+      employee.designation?.name ?? "",
+      employee.phone ?? "",
+      employee.address ?? "",
+    ]
+      .map((value) => `"${String(value).replace(/"/g, "\"\"")}"`)
+      .join(","),
+  );
+  return [header.join(","), ...rows].join("\n");
+}
+
+export async function enrollFaceDescriptor(auth: TokenPayload, descriptor: number[]) {
+  if (auth.role !== "EMPLOYEE" || !auth.employeeId) throw new AppError(403, "Only employees can enroll face descriptor");
+  const before = await db.employee.findUnique({ where: { id: auth.employeeId } });
+  if (!before) throw new AppError(404, "Employee not found");
+  const updated = await db.employee.update({
+    where: { id: auth.employeeId },
+    data: { faceDescriptor: descriptor },
+  });
+  await audit(auth.userId, "UPDATE", "EMPLOYEE_FACE_DESCRIPTOR", auth.employeeId, { faceDescriptor: before.faceDescriptor } as Prisma.JsonObject, {
+    faceDescriptorLength: descriptor.length,
+  } as Prisma.JsonObject);
+  return { enrolled: true, employeeId: updated.id };
+}
+
+export async function resetFaceDescriptor(auth: TokenPayload, employeeId: string) {
+  if (!["ADMIN", "HR"].includes(auth.role)) throw new AppError(403, "Only Admin and HR can reset face descriptor");
+  const before = await db.employee.findUnique({ where: { id: employeeId } });
+  if (!before) throw new AppError(404, "Employee not found");
+  await db.employee.update({ where: { id: employeeId }, data: { faceDescriptor: Prisma.JsonNull } });
+  await audit(auth.userId, "UPDATE", "EMPLOYEE_FACE_DESCRIPTOR_RESET", employeeId, { hasFaceDescriptor: Boolean(before.faceDescriptor) } as Prisma.JsonObject, {
+    hasFaceDescriptor: false,
+  } as Prisma.JsonObject);
+  return { reset: true };
+}

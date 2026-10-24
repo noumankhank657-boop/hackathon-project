@@ -24,3 +24,5 @@ Short notes on choices we made and why. Any AI tool must read this before changi
 ## Change log
 
 - 2026-10-24: file created.
+- 2026-10-25: Added Prisma migration `20261025020000_add_user_name` to support optional user display names used in HR/Admin management and announcements.
+- 2026-10-25: Verified DeepSeek tool-calling through `/ai/tooling-check` using current `AI_BASE_URL` and `AI_MODEL` from backend env (response returned tool call successfully).

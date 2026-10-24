@@ -10,6 +10,7 @@ import leaveRoutes from "./modules/leave/leave.routes.js";
 import payrollRoutes from "./modules/payroll/payroll.routes.js";
 import analyticsRoutes from "./modules/analytics/analytics.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
+import commsRoutes from "./modules/comms/comms.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -28,6 +29,7 @@ app.use("/leave", leaveRoutes);
 app.use("/payroll", payrollRoutes);
 app.use("/analytics", analyticsRoutes);
 app.use("/ai", aiRoutes);
+app.use("/comms", commsRoutes);
 
 app.use(errorHandler);
 

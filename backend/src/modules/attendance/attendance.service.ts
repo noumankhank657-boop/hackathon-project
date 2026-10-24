@@ -31,16 +31,53 @@ function requireEmployee(auth: TokenPayload) {
 
 export async function checkIn(
   auth: TokenPayload,
-  payload: { source?: "WEB" | "CAMERA" | "CORRECTION"; lat?: number; lng?: number; accuracy?: number },
+  payload: {
+    source?: "WEB" | "CAMERA" | "CORRECTION";
+    lat?: number;
+    lng?: number;
+    accuracy?: number;
+    faceCount?: number;
+    faceDescriptor?: number[];
+    blinkVerified?: boolean;
+  },
 ) {
   const employeeId = requireEmployee(auth);
   const now = new Date();
   const { start, end } = dayRange(now);
+  const employee = await db.employee.findUnique({ where: { id: employeeId }, select: { faceDescriptor: true } });
   const existing = await db.attendance.findFirst({ where: { employeeId, date: { gte: start, lt: end } } });
   if (existing) throw new AppError(409, "You have already checked in today");
 
   const settings = await getOrgSettings();
+  if (payload.source === "CAMERA") {
+    if (payload.faceCount !== 1) throw new AppError(422, "Camera check-in requires exactly one face");
+    if (payload.lat === undefined || payload.lng === undefined || payload.accuracy === undefined) {
+      throw new AppError(422, "Location coordinates and accuracy are required for camera check-in");
+    }
+    if (payload.accuracy > 100) throw new AppError(422, "GPS accuracy must be 100 meters or better");
+    const org = await db.setting.findUnique({ where: { key: "organization" } });
+    const office = org?.value as { latitude?: number; longitude?: number; radiusMeters?: number } | null;
+    if (office?.latitude === undefined || office?.longitude === undefined || office.latitude === null || office.longitude === null) {
+      throw new AppError(422, "Office location is not configured yet");
+    }
+    const radius = office.radiusMeters ?? 150;
+    const distanceMeters = haversineMeters(payload.lat, payload.lng, office.latitude, office.longitude);
+    if (distanceMeters > radius) throw new AppError(422, `You are outside the office radius by ${Math.round(distanceMeters - radius)} meters`);
+
+    if (!payload.blinkVerified) throw new AppError(422, "Blink verification is required for camera check-in");
+    const storedDescriptor = Array.isArray(employee?.faceDescriptor) ? (employee.faceDescriptor as number[]) : null;
+    if (!storedDescriptor || storedDescriptor.length !== 128) throw new AppError(422, "Face is not enrolled yet");
+    if (!payload.faceDescriptor || payload.faceDescriptor.length !== 128) throw new AppError(422, "Current face descriptor is required");
+    const matchDistance = euclideanDistance(storedDescriptor, payload.faceDescriptor);
+    if (matchDistance > 0.5) throw new AppError(422, "Face match failed");
+    payload = { ...payload, accuracy: payload.accuracy, lat: payload.lat, lng: payload.lng };
+  }
+
   const status = computeInitialStatus(now, settings.officeStart ?? "09:00", settings.graceMinutes ?? 15);
+  const matchScore =
+    payload.source === "CAMERA" && Array.isArray(employee?.faceDescriptor) && payload.faceDescriptor
+      ? euclideanDistance(employee.faceDescriptor as number[], payload.faceDescriptor)
+      : null;
   const record = await db.attendance.create({
     data: {
       employeeId,
@@ -51,10 +88,33 @@ export async function checkIn(
       lat: payload.lat,
       lng: payload.lng,
       accuracy: payload.accuracy,
+      faceMatchScore: matchScore,
     },
   });
   await audit(auth.userId, "CREATE", "ATTENDANCE", record.id, null, record as unknown as Prisma.JsonObject);
   return record;
+}
+
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const earthRadius = 6371000;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
+}
+
+function euclideanDistance(a: number[], b: number[]) {
+  if (a.length !== b.length) return Number.POSITIVE_INFINITY;
+  let sum = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    const delta = a[index] - b[index];
+    sum += delta * delta;
+  }
+  return Math.sqrt(sum);
 }
 
 export async function checkOut(auth: TokenPayload, payload: { source?: "WEB" | "CAMERA" | "CORRECTION"; lat?: number; lng?: number; accuracy?: number }) {
