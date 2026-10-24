@@ -30,4 +30,11 @@ export async function changePassword(userId: string, currentPassword: string, ne
   await audit(userId, "UPDATE", "USER_PASSWORD", userId);
 }
 
-export const setupStatus = async () => ({ needsSetup: (await db.user.count({ where: { role: "ADMIN" } })) === 0 });
+export const setupStatus = async () => {
+  const hasAdmin = (await db.user.count({ where: { role: "ADMIN" } })) > 0;
+  if (!hasAdmin && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    await setupCompany({ companyName: "HCM Lite", email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD });
+    return { needsSetup: false };
+  }
+  return { needsSetup: !hasAdmin };
+};
