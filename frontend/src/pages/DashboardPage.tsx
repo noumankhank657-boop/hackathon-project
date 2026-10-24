@@ -20,6 +20,7 @@ import type { AdminDashboard as AdminDashboardData, EmployeeDashboard as Employe
 import { useAuth } from "../auth/AuthContext";
 import { Button, Card, EmptyState, ErrorAlert, Field, FormError, LoadingState, PageHeading, SelectField, StatusPill } from "../components/Feedback";
 import { useResource } from "../hooks/useResource";
+import { AiChatPanel } from "./AiAssistantPage";
 
 const chartColors = ["#0f766e", "#f59e0b", "#8b5cf6", "#0284c7", "#e11d48", "#64748b"];
 
@@ -388,9 +389,7 @@ function EmployeeDashboard() {
       ) : !dashboard.data ? <EmptyState title="Personal dashboard is unavailable" /> : <EmployeeDashboardView data={dashboard.data} />}
       <FormError error={checkinError} />
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
-        <Card title="Ask my assistant" subtitle="AI answers use your own data and company policies only." actions={<Link to="/assistant" className="button button-primary">Open assistant</Link>}>
-          <p className="text-sm text-slate-600">Ask about your leave balance, attendance, or company policy.</p>
-        </Card>
+        <AiChatPanel compact />
         <AnnouncementsCard announcements={dashboard.data?.announcements ?? []} loading={dashboard.loading} error={dashboard.error} />
       </div>
       {dashboard.data ? (

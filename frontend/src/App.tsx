@@ -5,6 +5,7 @@ import { AppLayout } from "./components/AppLayout";
 import { ChangePasswordPage, LoginPage, SetupPage } from "./pages/AuthPages";
 import { AttendanceBoardPage, AttendancePage } from "./pages/AttendancePage";
 import { AttendanceCorrectionsPage } from "./pages/AttendanceCorrectionsPage";
+import { AiAssistantPage } from "./pages/AiAssistantPage";
 import { LoadingScreen } from "./components/Feedback";
 import { CsvImportPage } from "./pages/CsvImportPage";
 import { EmployeeDirectoryPage } from "./pages/EmployeeDirectoryPage";
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="payroll" element={<PayrollPage />} />
         <Route path="communications" element={<CommunicationsPage />} />
         <Route path="audit" element={<RoleGuard roles={["ADMIN"]}><AuditPage /></RoleGuard>} />
+        <Route path="assistant" element={<AiAssistantPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
