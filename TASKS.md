@@ -10,7 +10,7 @@ Rules for using this file:
 | # | Phase | Covers | Points area | Status |
 |---|---|---|---|---|
 | 0 | Setup and scaffold | repo, env, DB schema, server and app run | foundation | DONE |
-| 1 | Auth, roles, first-run setup | M1 · #01 #02 | Core, Security | TODO |
+| 1 | Auth, roles, first-run setup | M1 · #01 #02 | Core, Security | IN PROGRESS |
 | 2 | Organization setup | M2 · #03 #04 #05 | Core | TODO |
 | 3 | Employees | M3 · #06 #07 (CSV #08 later) | Core | TODO |
 | 4 | Attendance (web) | M4 · #09 #10 #11 | Core | TODO |

@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { validate } from "../../middleware/validate.js";
+import { requireAuth } from "../../middleware/auth.js";
+import { changePassword, login, setupCompany, setupStatus } from "./auth.service.js";
+import { loginSchema, passwordSchema, setupSchema } from "./auth.schemas.js";
+const router = Router();
+router.get("/setup-status", async (_req, res, next) => { try { res.json(await setupStatus()); } catch (e) { next(e); } });
+router.post("/setup", validate(setupSchema), async (req, res, next) => { try { res.status(201).json(await setupCompany(req.body)); } catch (e) { next(e); } });
+router.post("/login", validate(loginSchema), async (req, res, next) => { try { res.json(await login(req.body.email, req.body.password)); } catch (e) { next(e); } });
+router.post("/change-password", requireAuth, validate(passwordSchema), async (req, res, next) => { try { await changePassword(req.auth!.userId, req.body.currentPassword, req.body.newPassword); res.status(204).end(); } catch (e) { next(e); } });
+export default router;

@@ -1,48 +1,12 @@
-import { useEffect, useState } from "react";
-
-type HealthState =
-  | { kind: "loading" }
-  | { kind: "success"; status: string }
-  | { kind: "error"; message: string };
-
+import { FormEvent, createContext, useContext, useEffect, useState } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-
-export default function App() {
-  const [health, setHealth] = useState<HealthState>({ kind: "loading" });
-
-  useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        const response = await fetch(`${apiUrl}/health`);
-
-        if (!response.ok) {
-          throw new Error(`Backend returned ${response.status}`);
-        }
-
-        const data: { status: string } = await response.json();
-        setHealth({ kind: "success", status: data.status });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unable to reach the backend";
-        setHealth({ kind: "error", message });
-      }
-    };
-
-    void checkHealth();
-  }, []);
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 text-slate-100">
-      <section className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-8 shadow-2xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">HCM Lite</p>
-        <h1 className="mt-3 text-3xl font-bold">Project setup</h1>
-        <p className="mt-3 text-slate-300">Checking the backend connection before the first company is configured.</p>
-
-        <div className="mt-7 rounded-xl bg-slate-800 p-4" aria-live="polite">
-          {health.kind === "loading" && <p>Checking backend health…</p>}
-          {health.kind === "success" && <p className="text-emerald-300">Backend status: {health.status}</p>}
-          {health.kind === "error" && <p className="text-rose-300">Backend unavailable: {health.message}</p>}
-        </div>
-      </section>
-    </main>
-  );
-}
+type Role = "ADMIN" | "HR" | "EMPLOYEE";
+type Session = { token: string; user: { email: string; role: Role; mustChangePassword: boolean } };
+const AuthContext = createContext<{ session: Session | null; setSession: (value: Session | null) => void }>({ session: null, setSession: () => undefined });
+const useAuth = () => useContext(AuthContext);
+async function request(path: string, options?: RequestInit) { const response = await fetch(`${apiUrl}${path}`, { headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) }, ...options }); if (!response.ok) throw new Error((await response.json().catch(() => ({ error: "Request failed" }))).error); return response.status === 204 ? undefined : response.json(); }
+function AuthForm({ setup }: { setup: boolean }) { const navigate = useNavigate(); const { setSession } = useAuth(); const [error, setError] = useState(""); const [loading, setLoading] = useState(false); const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); setError(""); const form = new FormData(event.currentTarget); try { const result = await request(setup ? "/auth/setup" : "/auth/login", { method: "POST", body: JSON.stringify(setup ? { companyName: form.get("companyName"), email: form.get("email"), password: form.get("password") } : { email: form.get("email"), password: form.get("password") }) }); setSession(result); navigate("/"); } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to continue"); } finally { setLoading(false); } }; return <main className="auth"><form onSubmit={submit}><p className="eyebrow">HCM Lite</p><h1>{setup ? "Set up your company" : "Welcome back"}</h1>{setup && <label>Company name<input name="companyName" required minLength={2} /></label>}<label>Email<input name="email" type="email" required /></label><label>Password<input name="password" type="password" required minLength={8} /></label>{error && <p className="error">{error}</p>}<button disabled={loading}>{loading ? "Please wait…" : setup ? "Create Admin account" : "Sign in"}</button></form></main>; }
+function Dashboard() { const { session, setSession } = useAuth(); if (!session) return <Navigate to="/login" replace />; if (session.user.mustChangePassword) return <Navigate to="/change-password" replace />; return <main className="shell"><header><strong>HCM Lite</strong><button onClick={() => setSession(null)}>Log out</button></header><section><p className="eyebrow">{session.user.role}</p><h1>Dashboard</h1><p>Your workspace is ready. Module screens appear here as they are configured.</p></section></main>; }
+function PasswordPage() { const { session, setSession } = useAuth(); const navigate = useNavigate(); const [error, setError] = useState(""); if (!session) return <Navigate to="/login" />; const submit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { await request("/auth/change-password", { method: "POST", headers: { Authorization: `Bearer ${session.token}` }, body: JSON.stringify({ currentPassword: form.get("currentPassword"), newPassword: form.get("newPassword") }) }); setSession({ ...session, user: { ...session.user, mustChangePassword: false } }); navigate("/"); } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to change password"); } }; return <main className="auth"><form onSubmit={submit}><h1>Change your password</h1><label>Current password<input name="currentPassword" type="password" required /></label><label>New password<input name="newPassword" type="password" minLength={8} required /></label>{error && <p className="error">{error}</p>}<button>Save password</button></form></main>; }
+export default function App() { const [session, setSession] = useState<Session | null>(() => { const raw = localStorage.getItem("hcm-session"); return raw ? JSON.parse(raw) as Session : null; }); const [needsSetup, setNeedsSetup] = useState<boolean | null>(null); useEffect(() => { void request("/auth/setup-status").then((data) => setNeedsSetup(data.needsSetup)).catch(() => setNeedsSetup(false)); }, []); const setStored = (value: Session | null) => { setSession(value); if (value) localStorage.setItem("hcm-session", JSON.stringify(value)); else localStorage.removeItem("hcm-session"); }; if (needsSetup === null) return <main className="auth">Loading HCM Lite…</main>; return <AuthContext.Provider value={{ session, setSession: setStored }}><Routes><Route path="/setup" element={needsSetup ? <AuthForm setup /> : <Navigate to="/login" />} /><Route path="/login" element={session ? <Navigate to="/" /> : needsSetup ? <Navigate to="/setup" /> : <AuthForm setup={false} />} /><Route path="/change-password" element={<PasswordPage />} /><Route path="/" element={<Dashboard />} /><Route path="*" element={<Navigate to="/" />} /></Routes></AuthContext.Provider>; }
