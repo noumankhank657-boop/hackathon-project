@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { NotificationBell } from "./NotificationBell";
 
 type NavItem = { label: string; to: string };
 
@@ -41,6 +42,7 @@ function itemsForRole(role: "ADMIN" | "HR" | "EMPLOYEE"): NavItem[] {
     { label: "Camera check-in", to: "/face/check-in" },
     { label: "Leave", to: "/leave" },
     { label: "Payslips", to: "/payroll" },
+    { label: "Announcements", to: "/communications" },
     { label: "AI assistant", to: "/assistant" },
   ];
 }
@@ -72,6 +74,7 @@ export function AppLayout() {
           <div className="flex shrink-0 items-center gap-2">
             <span className="hidden max-w-48 truncate text-right text-xs text-slate-500 sm:block">{session.user.email}</span>
             <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-900">{session.user.role}</span>
+            <NotificationBell />
             <button type="button" className="button button-ghost !px-2.5" onClick={signOut}>Log out</button>
           </div>
         </div>

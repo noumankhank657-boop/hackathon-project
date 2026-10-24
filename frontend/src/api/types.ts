@@ -260,7 +260,15 @@ export interface HrDashboard {
     pendingLeave: number;
     pendingCorrections: number;
   };
-  attendanceTrend: Array<{ date: string; status: AttendanceStatus }>;
+  attendanceTrend: Array<{
+    date: string;
+    present: number;
+    late: number;
+    halfDay: number;
+    missingCheckout: number;
+    absent: number;
+    onLeave: number;
+  }>;
   absenteeismByDept: Array<{ department: string; absenteeismPercent: number }>;
   lateByDept: Array<{ department: string; latePercent: number }>;
   leaveByType: Array<{ name: string; days: number }>;

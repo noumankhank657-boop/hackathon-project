@@ -86,6 +86,30 @@ export async function getHrDashboard(auth: TokenPayload, filter: AnalyticsFilter
   });
   const leaveByType = Array.from(leaveByTypeMap.entries()).map(([name, days]) => ({ name, days }));
 
+  const attendanceTrendMap = new Map<
+    string,
+    { date: string; present: number; late: number; halfDay: number; missingCheckout: number; absent: number; onLeave: number }
+  >();
+  attendanceRows.forEach((row) => {
+    const date = row.date.toISOString().slice(0, 10);
+    const aggregate = attendanceTrendMap.get(date) ?? {
+      date,
+      present: 0,
+      late: 0,
+      halfDay: 0,
+      missingCheckout: 0,
+      absent: 0,
+      onLeave: 0,
+    };
+    if (row.status === "PRESENT") aggregate.present += 1;
+    if (row.status === "LATE") aggregate.late += 1;
+    if (row.status === "HALF_DAY") aggregate.halfDay += 1;
+    if (row.status === "MISSING_CHECKOUT") aggregate.missingCheckout += 1;
+    if (row.status === "ABSENT") aggregate.absent += 1;
+    if (row.status === "ON_LEAVE") aggregate.onLeave += 1;
+    attendanceTrendMap.set(date, aggregate);
+  });
+
   const lateComers = await db.attendance.groupBy({
     by: ["employeeId"],
     where: {
@@ -109,7 +133,7 @@ export async function getHrDashboard(auth: TokenPayload, filter: AnalyticsFilter
 
   return {
     kpis: { headcount, present, onLeaveToday, lateToday, pendingLeave, pendingCorrections },
-    attendanceTrend: attendanceRows.map((row) => ({ date: row.date.toISOString().slice(0, 10), status: row.status })),
+    attendanceTrend: Array.from(attendanceTrendMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
     absenteeismByDept,
     lateByDept: Array.from(lateByDepartmentMap.values()).map((item) => ({
       department: item.department,
