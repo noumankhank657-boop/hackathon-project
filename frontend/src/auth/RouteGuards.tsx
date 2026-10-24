@@ -6,10 +6,10 @@ import { LoadingScreen } from "../components/Feedback";
 import { NotAllowedPage } from "../pages/NotAllowedPage";
 
 export function ProtectedRoute({ children, allowMustChange = false }: { children: ReactNode; allowMustChange?: boolean }) {
-  const { session, setupLoading } = useAuth();
+  const { session, needsSetup, setupLoading } = useAuth();
   const location = useLocation();
 
-  if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!session) return <Navigate to={needsSetup ? "/setup" : "/login"} replace state={{ from: location.pathname }} />;
   if (session.user.mustChangePassword && !allowMustChange && location.pathname !== "/change-password") {
     return <Navigate to="/change-password" replace />;
   }
@@ -32,6 +32,7 @@ export function PublicOnly({ children }: { children: ReactNode }) {
 
   if (setupLoading) return <LoadingScreen label="Checking HCM Lite…" />;
   if (setupError) return <main className="auth-shell"><div className="auth-card"><h1>Unable to connect</h1><p className="text-rose-700">{setupError}</p><button className="button button-primary" onClick={() => window.location.reload()}>Try again</button></div></main>;
+  if (needsSetup) return <Navigate to="/setup" replace />;
   if (session) {
     if (session.user.mustChangePassword) return <Navigate to="/change-password" replace />;
     return <Navigate to="/" replace state={{ from: location.pathname }} />;

@@ -124,6 +124,20 @@ export interface EmployeeCreateInput {
   designationId?: string;
 }
 
+export interface EmployeeUpdateInput {
+  firstName?: string;
+  lastName?: string;
+  phone?: string | null;
+  address?: string | null;
+  dateOfBirth?: string | null;
+  joiningDate?: string;
+  leavingDate?: string | null;
+  status?: EmploymentStatus;
+  basicSalary?: number;
+  departmentId?: string | null;
+  designationId?: string | null;
+}
+
 export interface EmployeeCreateResult {
   employee: Employee;
   temporaryPassword: string;

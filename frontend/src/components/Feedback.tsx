@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
 export function LoadingScreen({ label = "Loading…" }: { label?: string }) {
@@ -135,8 +136,8 @@ export function StatusPill({ value }: { value: string }) {
 
 export function FormError({ error }: { error: unknown }) {
   if (!error) return null;
-  const { status, message } = error instanceof Error ? error as Error & { status?: number } : { message: "Something went wrong" };
-  return <ErrorAlert message={message} status={status} />;
+  if (error instanceof ApiError) return <ErrorAlert message={error.message} status={error.status} />;
+  return <ErrorAlert message={error instanceof Error ? error.message : String(error)} />;
 }
 
 export function AppFooter() {

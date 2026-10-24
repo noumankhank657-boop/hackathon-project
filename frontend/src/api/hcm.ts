@@ -15,6 +15,7 @@ import type {
   EmployeeCreateResult,
   EmployeeDashboard,
   EmployeePage,
+  EmployeeUpdateInput,
   EmploymentStatus,
   Holiday,
   HrDashboard,
@@ -74,6 +75,7 @@ export const api = {
     settings: () => request<OrganizationSettings>("/org/settings"),
     saveSettings: (body: OrganizationSettings) =>
       request<OrganizationSettings>("/org/settings", { method: "PUT", body: jsonBody(body) }),
+    bootstrapDefaultLeaveTypes: () => request<void>("/org/bootstrap-default-leaves", { method: "POST", body: jsonBody({}) }),
     departments: namedEntityApi<Department>("departments"),
     designations: namedEntityApi<Designation>("designations"),
     leaveTypes: {
@@ -92,7 +94,8 @@ export const api = {
     },
     hrUsers: {
       list: () => request<HrUser[]>("/org/hr-users"),
-      create: (body: UserCreateInput) => request<HrUser>("/org/hr-users", { method: "POST", body: jsonBody(body) }),
+      create: (body: UserCreateInput) =>
+        request<{ id: string; email: string; role: Role; name: string | null }>("/org/hr-users", { method: "POST", body: jsonBody(body) }),
       setActive: (id: string, isActive: boolean) =>
         request<Pick<HrUser, "id" | "email" | "isActive">>(`/org/users/${id}`, { method: "PATCH", body: jsonBody({ isActive }) }),
       resetPassword: (id: string, password: string) =>
@@ -112,7 +115,7 @@ export const api = {
     me: () => request<Employee>("/employees/me"),
     create: (body: EmployeeCreateInput) =>
       request<EmployeeCreateResult>("/employees", { method: "POST", body: jsonBody(body) }),
-    update: (id: string, body: Partial<EmployeeCreateInput>) =>
+    update: (id: string, body: EmployeeUpdateInput) =>
       request<Employee>(`/employees/${id}`, { method: "PATCH", body: jsonBody(body) }),
     updateMe: (body: { phone?: string | null; address?: string | null }) =>
       request<Employee>("/employees/me", { method: "PATCH", body: jsonBody(body) }),
