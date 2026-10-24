@@ -13,7 +13,7 @@ Rules for using this file:
 | 1 | Auth, roles, first-run setup | M1 · #01 #02 | Core, Security | DONE |
 | 2 | Organization setup | M2 · #03 #04 #05 | Core | DONE |
 | 3 | Employees | M3 · #06 #07 (CSV #08 later) | Core | DONE |
-| 4 | Attendance (web) | M4 · #09 #10 #11 | Core | TODO |
+| 4 | Attendance (web) | M4 · #09 #10 #11 | Core | DONE |
 | 5 | Leave | M5 · #12 #13 | Core | TODO |
 | 6 | Payroll | M6 · #14 #15 #16 #17 | Core | TODO |
 | 7 | Dashboards and analytics | M7 · #18 | Data and analytics | TODO |
