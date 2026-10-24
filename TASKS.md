@@ -11,8 +11,7 @@ Rules for using this file:
 |---|---|---|---|---|
 | 0 | Setup and scaffold | repo, env, DB schema, server and app run | foundation | DONE |
 | 1 | Auth, roles, first-run setup | M1 · #01 #02 | Core, Security | DONE |
-| 2 | Organization setup | M2 · #03 #04 #05 | Core | IN PROGRESS |
-| 2 | Organization setup | M2 · #03 #04 #05 | Core | TODO |
+| 2 | Organization setup | M2 · #03 #04 #05 | Core | DONE |
 | 3 | Employees | M3 · #06 #07 (CSV #08 later) | Core | TODO |
 | 4 | Attendance (web) | M4 · #09 #10 #11 | Core | TODO |
 | 5 | Leave | M5 · #12 #13 | Core | TODO |
