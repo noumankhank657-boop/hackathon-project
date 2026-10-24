@@ -89,7 +89,7 @@ for (const [path, type] of [
   });
 }
 
-router.get("/leave-types", requireAuth, requireRole("ADMIN", "HR"), async (_request, response, next) => {
+router.get("/leave-types", requireAuth, requireRole("ADMIN", "HR", "EMPLOYEE"), async (_request, response, next) => {
   try {
     response.json(await listLeaveTypes());
   } catch (error) {

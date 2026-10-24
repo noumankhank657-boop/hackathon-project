@@ -6,6 +6,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import orgRoutes from "./modules/org/org.routes.js";
 import employeesRoutes from "./modules/employees/employees.routes.js";
 import attendanceRoutes from "./modules/attendance/attendance.routes.js";
+import leaveRoutes from "./modules/leave/leave.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
@@ -20,6 +21,7 @@ app.use("/auth", authRoutes);
 app.use("/org", orgRoutes);
 app.use("/employees", employeesRoutes);
 app.use("/attendance", attendanceRoutes);
+app.use("/leave", leaveRoutes);
 
 app.use(errorHandler);
 

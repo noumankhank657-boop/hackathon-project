@@ -96,10 +96,47 @@ export async function getAttendanceCalendar(auth: TokenPayload, query: { employe
   const from = new Date(query.from);
   const to = new Date(query.to);
   to.setHours(23, 59, 59, 999);
-  return db.attendance.findMany({
+  const attendances = await db.attendance.findMany({
     where: { employeeId: requestedEmployeeId, date: { gte: from, lte: to } },
     orderBy: { date: "asc" },
   });
+  const approvedLeaves = await db.leaveRequest.findMany({
+    where: {
+      employeeId: requestedEmployeeId,
+      status: "APPROVED",
+      startDate: { lte: to },
+      endDate: { gte: from },
+    },
+    select: { startDate: true, endDate: true },
+  });
+  const attendanceMap = new Map(attendances.map((item) => [item.date.toISOString().slice(0, 10), item]));
+  const rows = [...attendances];
+  const cursor = new Date(from);
+  while (cursor <= to) {
+    const key = cursor.toISOString().slice(0, 10);
+    if (!attendanceMap.has(key)) {
+      const onLeave = approvedLeaves.some((leave) => cursor >= leave.startDate && cursor <= leave.endDate);
+      if (onLeave) {
+        rows.push({
+          id: `virtual-on-leave-${key}`,
+          employeeId: requestedEmployeeId,
+          date: new Date(cursor),
+          checkIn: null,
+          checkOut: null,
+          status: "ON_LEAVE",
+          source: "WEB",
+          lat: null,
+          lng: null,
+          accuracy: null,
+          faceMatchScore: null,
+          createdAt: new Date(cursor),
+          updatedAt: new Date(cursor),
+        });
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return rows.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 export async function getDailyBoard(auth: TokenPayload, date: string) {

@@ -14,7 +14,7 @@ Rules for using this file:
 | 2 | Organization setup | M2 · #03 #04 #05 | Core | DONE |
 | 3 | Employees | M3 · #06 #07 (CSV #08 later) | Core | DONE |
 | 4 | Attendance (web) | M4 · #09 #10 #11 | Core | DONE |
-| 5 | Leave | M5 · #12 #13 | Core | TODO |
+| 5 | Leave | M5 · #12 #13 | Core | DONE |
 | 6 | Payroll | M6 · #14 #15 #16 #17 | Core | TODO |
 | 7 | Dashboards and analytics | M7 · #18 | Data and analytics | TODO |
 | 8 | AI assistant | M8 · #19 #20 #21 #22 | AI | TODO |
