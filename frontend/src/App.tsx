@@ -19,6 +19,8 @@ import { PayrollPage } from "./pages/PayrollPage";
 import { UsersPage } from "./pages/UsersPage";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const FaceRegistrationPage = lazy(() => import("./pages/FacePages").then((module) => ({ default: module.FaceRegistrationPage })));
+const CameraCheckInPage = lazy(() => import("./pages/FacePages").then((module) => ({ default: module.CameraCheckInPage })));
 
 export default function App() {
   return (
@@ -44,6 +46,8 @@ export default function App() {
         <Route path="communications" element={<CommunicationsPage />} />
         <Route path="audit" element={<RoleGuard roles={["ADMIN"]}><AuditPage /></RoleGuard>} />
         <Route path="assistant" element={<AiAssistantPage />} />
+        <Route path="face/register" element={<RoleGuard roles={["EMPLOYEE"]}><Suspense fallback={<LoadingScreen label="Loading face enrollment…" />}><FaceRegistrationPage /></Suspense></RoleGuard>} />
+        <Route path="face/check-in" element={<RoleGuard roles={["EMPLOYEE"]}><Suspense fallback={<LoadingScreen label="Loading camera check-in…" />}><CameraCheckInPage /></Suspense></RoleGuard>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
