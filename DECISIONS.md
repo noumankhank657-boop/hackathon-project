@@ -29,3 +29,4 @@ Short notes on choices we made and why. Any AI tool must read this before changi
 - 2026-10-25: Built the frontend as role-aware pages with one typed API client; Recharts is used for server-backed dashboards.
 - 2026-10-25: Added the official `@vladmandic/face-api` detector, landmark, and recognition model assets under `frontend/public/models` so face attendance works without a runtime CDN.
 - 2026-10-25: Changed the HR attendance trend API from raw attendance rows to daily status aggregates so chart values remain server-computed.
+- 2026-10-25: Local development CORS accepts both `localhost` and `127.0.0.1` when `FRONTEND_URL` is a loopback origin; non-local configured origins remain exact-match only.

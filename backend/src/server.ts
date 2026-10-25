@@ -14,8 +14,17 @@ import commsRoutes from "./modules/comms/comms.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
+const frontendOrigin = new URL(process.env.FRONTEND_URL ?? "http://localhost:5173");
+const allowedOrigins = [frontendOrigin.origin];
 
-app.use(cors({ origin: process.env.FRONTEND_URL ?? "http://localhost:5173" }));
+if (["localhost", "127.0.0.1", "[::1]"].includes(frontendOrigin.hostname)) {
+  const portSuffix = frontendOrigin.port ? `:${frontendOrigin.port}` : "";
+  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+    allowedOrigins.push(`${frontendOrigin.protocol}//${host}${portSuffix}`);
+  }
+}
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.get("/health", (_request, response) => {

@@ -20,7 +20,7 @@
    npm install
    npm run dev
    ```
-4. Open the Vite URL. The API URL defaults to `http://localhost:4000`; set `VITE_API_URL` in `frontend/.env` only if the backend uses another URL.
+4. Open the Vite URL. The API URL defaults to `http://localhost:4000`; set `VITE_API_URL` in `frontend/.env` only if the backend uses another URL. Local development accepts `localhost` and `127.0.0.1`; for a hosted frontend, set `FRONTEND_URL` to its exact origin.
 
 ## First Admin creation
 - On a fresh database, open the app and complete the first-run setup form with the company name, Admin email, and password.
