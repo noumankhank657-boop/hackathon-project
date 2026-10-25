@@ -14,6 +14,8 @@ export function EmployeeDirectoryPage() {
   const [departmentId, setDepartmentId] = useState("");
   const [status, setStatus] = useState<EmploymentStatus | "">("");
   const [page, setPage] = useState(1);
+  const [exportError, setExportError] = useState<unknown>(null);
+  const [exporting, setExporting] = useState(false);
   const directory = useResource(
     () => api.employees.list({ page, pageSize, search: search || undefined, departmentId: departmentId || undefined, status: status || undefined }),
     [page, search, departmentId, status],
@@ -25,6 +27,18 @@ export function EmployeeDirectoryPage() {
     setSearch(searchInput.trim());
   }
 
+  async function exportCsv() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.employees.exportCsv();
+    } catch (reason) {
+      setExportError(reason);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const totalPages = Math.max(1, Math.ceil((directory.data?.total ?? 0) / pageSize));
 
   return (
@@ -34,12 +48,13 @@ export function EmployeeDirectoryPage() {
         description="Search and filter the employee directory. Results are paged by the server."
         actions={
           <>
-            <Button variant="secondary" onClick={() => void api.employees.exportCsv().catch((error: unknown) => window.alert(error instanceof Error ? error.message : "Export failed"))}>Export CSV</Button>
+            <Button variant="secondary" disabled={exporting} onClick={() => void exportCsv()}>{exporting ? "Exporting…" : "Export CSV"}</Button>
             <Link className="button button-secondary" to="/employees/import">Import CSV</Link>
             <Link className="button button-primary" to="/employees/new">Register employee</Link>
           </>
         }
       />
+      <FormError error={exportError} />
       <Card title="Directory">
         <form className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,2fr)_minmax(10rem,1fr)_minmax(10rem,1fr)_auto]" onSubmit={applyFilters}>
           <Field label="Search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Name, employee code or email" />

@@ -20,7 +20,9 @@ Rules for using this file:
 | 8 | AI assistant | M8 · #19 #20 #21 #22 | AI | DONE |
 | 9 | Face attendance (9A detect + location, 9B match + blink) | bonus | Bonus, AI | DONE |
 | 10 | Comms and audit screens | M9 · #23 #24 #25 (+ CSV #08) | Core, Security | DONE |
-| 11 | Polish, tests, README, deploy, demo | all | UI, Code, Docs | TODO |
+| 11 | Polish, tests, README, deploy, demo | all | UI, Code, Docs | IN PROGRESS |
+
+Phase 11 remains IN PROGRESS because deployment is explicitly out of scope, and a fresh-database browser demo plus real webcam/GPS verification were not available in this environment. Builds, backend unit tests, API smoke checks, and local face-model serving were verified.
 
 ## Where is face attendance in the order?
 

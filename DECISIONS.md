@@ -5,7 +5,7 @@ Short notes on choices we made and why. Any AI tool must read this before changi
 ## Decisions so far
 
 1. **Event and goal.** Saylani Hackathon, 24 Oct 2026. Build HCM Lite exactly as the brief (`docs/HCM_Lite_Brief.pdf`) describes. Camera face attendance is treated as a main feature (Phase 9 in TASKS.md).
-2. **Stack.** Backend: Node.js + TypeScript + Express + Prisma + PostgreSQL. Frontend: React + Vite + TypeScript + Tailwind. (Chosen for speed. NestJS was the other option; change this line if you switch.)
+2. **Stack.** Backend: Node.js + TypeScript + Express + Prisma + PostgreSQL. Frontend: React + Vite + TypeScript + Tailwind + React Router + Recharts + `@vladmandic/face-api`. (Chosen for speed. NestJS was the other option; change this line if you switch.)
 3. **Database.** PostgreSQL hosted on Neon (free). One database is used for local work and for the live demo. Tables are created by Prisma migrations, never by hand.
 4. **AI provider.** DeepSeek API through its OpenAI-compatible endpoint, with tool calling.
    - `AI_BASE_URL=https://api.deepseek.com`
@@ -26,3 +26,6 @@ Short notes on choices we made and why. Any AI tool must read this before changi
 - 2026-10-24: file created.
 - 2026-10-25: Added Prisma migration `20261025020000_add_user_name` to support optional user display names used in HR/Admin management and announcements.
 - 2026-10-25: Verified DeepSeek tool-calling through `/ai/tooling-check` using current `AI_BASE_URL` and `AI_MODEL` from backend env (response returned tool call successfully).
+- 2026-10-25: Built the frontend as role-aware pages with one typed API client; Recharts is used for server-backed dashboards.
+- 2026-10-25: Added the official `@vladmandic/face-api` detector, landmark, and recognition model assets under `frontend/public/models` so face attendance works without a runtime CDN.
+- 2026-10-25: Changed the HR attendance trend API from raw attendance rows to daily status aggregates so chart values remain server-computed.
